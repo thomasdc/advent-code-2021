@@ -1,22 +1,25 @@
 ﻿using Shouldly;
 using Xunit;
 
-"input.txt".ParseInput().Part1().Print();
+"input.txt".ParseInput().Part2().Print();
 
 public static class Solver
 {
-    public static int Part1(this IEnumerable<Instruction> instructions) => instructions
+    public static int Part2(this IEnumerable<Instruction> instructions) => instructions
         .Aggregate(new Position(), (position, instruction) => position.Execute(instruction))
         .Multiply();
 }
 
-public record struct Position(int HorizontalPosition, int Depth)
+public record struct Position(int HorizontalPosition, int Depth, int Aim)
 {
     public Position Execute(Instruction instruction) => instruction.Direction switch
     {
-        "forward" => this with { HorizontalPosition = HorizontalPosition + instruction.Units },
-        "up" => this with { Depth = Depth + instruction.Units },
-        "down" => this with { Depth = Depth - instruction.Units },
+        "forward" => this with { 
+            HorizontalPosition = HorizontalPosition + instruction.Units,
+            Depth = Depth + Aim * instruction.Units
+        },
+        "up" => this with { Aim = Aim + instruction.Units },
+        "down" => this with { Aim = Aim - instruction.Units },
         _ => throw new NotImplementedException()
     };
 
@@ -38,5 +41,5 @@ public static class Utils
 public class Tests
 {
     [Fact]
-    public void ValidatePart1Example() => "example.txt".ParseInput().Part1().ShouldBe(150);
+    public void ValidatePart2Example() => "example.txt".ParseInput().Part2().ShouldBe(900);
 }
