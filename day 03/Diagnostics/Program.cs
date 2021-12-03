@@ -1,25 +1,57 @@
 ﻿using Shouldly;
 using Xunit;
 
-"input.txt".ParseInput().Part1().Print();
+"input.txt".ParseInput().Part2().Print();
 
 public static class Solver
 {
     public static int Part1(this bool[][] bits)
     {
+        var gamma = bits.FindCommonVector(false);
+        var epsilon = bits.FindCommonVector(true);
+        return gamma.ToDecimal() * epsilon.ToDecimal();
+    }
+
+    public static int Part2(this bool[][] bits)
+    {
+        var oygenGeneratorRating = bits.ExtractRating(false);
+        var co2ScrubberRating = bits.ExtractRating(true);
+        return oygenGeneratorRating.ToDecimal() * co2ScrubberRating.ToDecimal();
+    }
+
+    private static bool[] ExtractRating(this bool[][] bits, bool inverse)
+    {
+        var common = bits.FindCommonVector(inverse);
+        var remaining = bits;
+        for (var x = 0; x < bits[0].Length; x++)
+        {
+            remaining = remaining.Where(_ => _[x] == common[x]).ToArray();
+            if (remaining.Length == 1)
+            {
+                return remaining.Single();
+            }
+
+            common = remaining.FindCommonVector(inverse);
+        }
+
+        return Array.Empty<bool>();
+    }
+
+    private static bool[] FindCommonVector(this bool[][] bits, bool inverse)
+    {
         var common = new List<bool>();
         for (int x = 0; x < bits[0].Length; x++)
         {
             var grouped = bits.Select(_ => _[x]).GroupBy(_ => _).ToDictionary(_ => _.Key, _ => _.Count());
-            common.Add(grouped[true] > grouped[false]);
+            var trues = grouped.GetValueOrDefault(true, 0);
+            var falses = grouped.GetValueOrDefault(false, 0);
+            common.Add(trues >= falses);
         }
 
-        var gamma = common.ToArray();
-        var epsilon = common.Select(_ => !_).ToArray();
-        return gamma.ToDecimal() * epsilon.ToDecimal();
+        return (inverse ? common.Select(_ => !_) : common).ToArray();
     }
 
-    public static int ToDecimal(this bool[] bits) => bits.Aggregate(0, (result, bit) => (result << 1) + (bit ? 1 : 0));
+    private static int ToDecimal(this bool[] bits) => bits.Aggregate(0, (result, bit) => (result << 1) + (bit ? 1 : 0));
 }
 
 public static class Utils
@@ -34,4 +66,7 @@ public class Tests
 {
     [Fact]
     public void ValidatePart1Example() => "example.txt".ParseInput().Part1().ShouldBe(198);
+
+    [Fact]
+    public void ValidatePart2Example() => "example.txt".ParseInput().Part2().ShouldBe(230);
 }
