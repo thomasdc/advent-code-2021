@@ -1,7 +1,7 @@
 ﻿using Shouldly;
 using Xunit;
 
-"input.txt".ParseInput().Part1().Print();
+"input.txt".ParseInput().Part2().Print();
 
 public static class Solver
 {
@@ -14,8 +14,30 @@ public static class Solver
                 board.Cross(draw);
                 if (board.Bingo())
                 {
-                    var unmarkedSum = board.Cells.SelectMany(_ => _).Where(_ => !_.Crossed).Sum(_ => _.Number);
-                    return unmarkedSum * draw;
+                    return board.UnmarkedSum * draw;
+                }
+            }
+        }
+
+        return -1;
+    }
+
+    public static int Part2(this (int[] draws, Board[] boards) game)
+    {
+        var bingoBoards = new List<Board>();
+        foreach (var draw in game.draws)
+        {
+            foreach (var board in game.boards.Except(bingoBoards))
+            {
+                board.Cross(draw);
+                if (board.Bingo())
+                {
+                    if (game.boards.Except(bingoBoards).Count() == 1)
+                    {
+                        return board.UnmarkedSum * draw;
+                    }
+
+                    bingoBoards.Add(board);
                 }
             }
         }
@@ -27,6 +49,8 @@ public static class Solver
 public record struct Board(Cell[][] Cells)
 {
     public const int Dimension = 5;
+
+    public int UnmarkedSum => Cells.SelectMany(_ => _).Where(_ => !_.Crossed).Sum(_ => _.Number);
 
     public void Cross(int draw)
     {
@@ -109,4 +133,7 @@ public class Tests
 {
     [Fact]
     public void ValidatePart1Example() => "example.txt".ParseInput().Part1().ShouldBe(4512);
+    
+    [Fact]
+    public void ValidatePart2Example() => "example.txt".ParseInput().Part2().ShouldBe(1924);
 }
