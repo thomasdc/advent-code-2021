@@ -1,12 +1,20 @@
 ﻿using Shouldly;
 using Xunit;
 
-"input.txt".ParseInput().Part1().Print();
+"input.txt".ParseInput().Part2().Print();
 
 public static class Solver
 {
     public static int Part1(this Line[] lines) => lines
         .Where(_ => _.IsHorizontal || _.IsVertical)
+        .SelectMany(_ => _.Cells())
+        .GroupBy(_ => _)
+        .Where(_ => _.Count() > 1)
+        .Select(_ => _.Key)
+        .Distinct()
+        .Count();
+
+    public static int Part2(this Line[] lines) => lines
         .SelectMany(_ => _.Cells())
         .GroupBy(_ => _)
         .Where(_ => _.Count() > 1)
@@ -41,6 +49,19 @@ public record struct Line(Cell Start, Cell End)
             {
                 yield return new Cell(i, Start.Y);
             }
+        } 
+        else
+        {
+            int minX = Math.Min(Start.X, End.X);
+            var left = Start.X == minX ? Start : End;
+            var right = left == Start ? End : Start;
+            var yDelta = right.Y > left.Y ? 1 : -1;
+            var y = left.Y;
+            for (var x = left.X; x <= right.X; x++)
+            {
+                yield return new Cell(x, y);
+                y += yDelta;
+            }
         }
     }
 }
@@ -63,4 +84,7 @@ public class Tests
 {
     [Fact]
     public void ValidatePart1Example() => "example.txt".ParseInput().Part1().ShouldBe(5);
+
+    [Fact]
+    public void ValidatePart2Example() => "example.txt".ParseInput().Part2().ShouldBe(12);
 }
