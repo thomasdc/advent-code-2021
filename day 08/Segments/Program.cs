@@ -95,7 +95,7 @@ public static class Utils
 {
     public static (string[], string[])[] ParseInput(this string fileName) => (
         from line in File.ReadAllLines(fileName)
-        let parts = line.Split('|')
+        let parts = line.Split(" | ")
         select (parts[0].Split(' '), parts[1].Split(' '))).ToArray();
 
     public static void Print(this object o) => Console.WriteLine(o);
