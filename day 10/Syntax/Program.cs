@@ -5,7 +5,7 @@ using System.Linq;
 using Shouldly;
 using Xunit;
 
-"input.txt".ParseInput().Part1().Print();
+"input.txt".ParseInput().Part2().Print();
 
 public static class Solver
 {
@@ -22,6 +22,25 @@ public static class Solver
                 '>' => 25137,
                 _ => 0
             }).Sum();
+    }
+
+    public static long Part2(this string[] lines)
+    {
+        var totalScores = lines
+            .Select(Process)
+            .Where(_ => !_.IsCorrupt)
+            .Select(_ => _.stack.Select(x => x switch
+            {
+                '(' => 1,
+                '[' => 2,
+                '{' => 3,
+                '<' => 4,
+                _ => 0
+            }).Aggregate(0L, (result, x) => result * 5 + x))
+            .OrderByDescending(_ => _)
+            .ToArray();
+
+        return totalScores.ElementAt(totalScores.Length / 2);
     }
 
     private static (bool IsCorrupt, char? IllegalCharacter, Stack<char> stack) Process(this string line)
@@ -67,4 +86,7 @@ public class Tests
 {
     [Fact]
     public void ValidatePart1Example() => "example.txt".ParseInput().Part1().ShouldBe(26397);
+
+    [Fact]
+    public void ValidatePart2Example() => "example.txt".ParseInput().Part2().ShouldBe(288957);
 }
