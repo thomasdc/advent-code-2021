@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 using Shouldly;
 using Xunit;
 
-"input.txt".ParseInput().Part1().Print();
+"input.txt".ParseInput().Part2();
 
 public static class Solver
 {
@@ -15,6 +15,17 @@ public static class Solver
         var grid = new Grid(input.points);
         grid.Fold(input.Foldings[0]);
         return grid.NumberOfVisibleDots;
+    }
+
+    public static void Part2(this ((int x, int y)[] points, Folding[] Foldings) input)
+    {
+        var grid = new Grid(input.points);
+        foreach (var folding in input.Foldings)
+        {
+            grid.Fold(folding);
+        }
+        
+        grid.Print();
     }
 }
 
@@ -55,6 +66,19 @@ public class Grid
                     }
                 }
             }
+        }
+    }
+
+    public void Print()
+    {
+        for (var y = _dots.Min(_ => _.y); y <= _dots.Max(_ => _.y); y++)
+        {
+            for (var x = _dots.Min(_ => _.x); x <= _dots.Max(_ => _.x); x++)
+            {
+                Console.Write(_dots.Contains((x, y)) ? "█" : " ");
+            }
+
+            Console.WriteLine();
         }
     }
 }
