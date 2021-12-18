@@ -1,67 +1,87 @@
 ﻿using Shouldly;
 using Xunit;
 
-"input.txt".ParseInput().Part1().Print();
+"input.txt".ParseInput().Part2().Print();
 
 public static class Solver
 {
-    private static readonly (int x, int y)[] NeighbourVectors = { (0, -1), (0, 1), (-1, 0), (1, 0) };
+    public static long Part2(this int[][] risks)
+    {
+        return Part1(Expand(risks));
+    }
 
     public static long Part1(this int[][] risks)
     {
-        var shortestPath = Dijkstra(risks).ToArray();
-        return shortestPath.Sum(_ => risks[_.y][_.x]);
-    }
-
-    private static IEnumerable<(int x, int y)> Dijkstra(int[][] risks)
-    {
         var height = risks.Length;
         var width = risks[0].Length;
-        var nodes = risks.SelectMany((row, y) => row.Select((_, x) => (x, y)).ToArray()).ToArray();
+
+        (int x, int y)[] neighbourVectors = new[] { (0, -1), (0, 1), (-1, 0), (1, 0) };
+        IEnumerable<(int x, int y)> Neighbours((int x, int y) point) => neighbourVectors
+            .Select(_ => (x: point.x + _.x, y: point.y + _.y))
+            .Where(_ => !(_.x < 0 || _.x >= width || _.y < 0 || _.y >= height));
+
         var initial = (0, 0);
         var destination = (height - 1, width - 1);
-        var unvisited = new List<(int x, int y)>(nodes);
-        var paths = new ((int x, int y) node, int cost, (int x, int y)? via)[nodes.Length];
-        paths[0] = (initial, 0, initial);
-        var i = 1;
-        foreach (var node in nodes.Except(new[] {initial}))
+        var costs = new Dictionary<(int x, int y), int>
         {
-            paths[i++] = (node, int.MaxValue, null);
-        }
+            [initial] = 0
+        };
 
-        do
+        var via = new Dictionary<(int x, int y), (int x, int y)>();
+        var visited = new HashSet<(int x, int y)>();
+        var priorityQ = new PriorityQueue<(int x, int y), int>();
+        priorityQ.Enqueue(initial, costs[initial]);
+
+        while (priorityQ.TryDequeue(out var current, out var _))
         {
-            var current = paths.First(_ => unvisited.Contains(_.node)).node;
-            foreach (var neighbour in current.Neighbours(width, height).Intersect(unvisited))
+            visited.Add(current);
+            foreach (var neighbour in Neighbours(current))
             {
-                var currentCost = paths.Single(_ => _.node == current).cost;
-                var cost = currentCost + risks[neighbour.y][neighbour.x];
-                if (cost < paths.Single(_ => _.node == neighbour).cost)
+                var cost = costs[current] + risks[neighbour.y][neighbour.x];
+                if (cost < costs.GetValueOrDefault(neighbour, int.MaxValue))
                 {
-                    var entry = paths.Single(_ => _.node == neighbour);
-                    paths[Array.IndexOf(paths, entry)] = (neighbour, cost, current);
+                    costs[neighbour] = cost;
+                    via[neighbour] = current;
+                    if (!visited.Contains(neighbour))
+                    {
+                        priorityQ.Enqueue(neighbour, cost);
+                    }
                 }
             }
+        }
 
-            unvisited.Remove(current);
-            Sort();
-        } while (unvisited.Contains(destination));
-
-        void Sort() => Array.Sort(paths, (left, right) => left.cost - right.cost);
-
-        var currentNode = destination;
-        do
-        {
-            yield return currentNode;
-            var path = paths.Single(_ => _.node == currentNode);
-            currentNode = path.via!.Value;
-        } while (currentNode != initial);
+        return costs[destination];
     }
 
-    private static (int x, int y)[] Neighbours(this (int x, int y) point, int width, int height) => NeighbourVectors
-            .Select(_ => (x: point.x + _.x, y: point.y + _.y))
-            .Where(_ => !(_.x < 0 || _.x >= width || _.y < 0 || _.y >= height))
-            .ToArray();
+    private static int[][] Expand(int[][] risks)
+    {
+        const int multiplicator = 5;
+        var height = risks.Length;
+        var newHeight = height * multiplicator;
+        var width = risks[0].Length;
+        var newWidth = width * multiplicator;
+        var expanded = new int[newHeight][];
+        for (var i = 0; i < newHeight; i++)
+        {
+            expanded[i] = new int[newWidth];
+        }
+
+        for (var x = 0; x < width; x++)
+        {
+            for (var y = 0; y < height; y++)
+            {
+                for (var mY = 0; mY < multiplicator; mY++)
+                {
+                    for (var mX = 0; mX < multiplicator; mX++)
+                    {
+                        expanded[mY * height + y][mX * width + x] = ((risks[y][x] - 1 + mX + mY) % 9) + 1;
+                    }
+                }
+            }
+        }
+
+        return expanded;
+    }
 }
 
 public static class Utils
@@ -76,4 +96,7 @@ public class Tests
 {
     [Fact]
     public void ValidatePart1Example() => "example.txt".ParseInput().Part1().ShouldBe(40);
+    
+    [Fact]
+    public void ValidatePart2Example() => "example.txt".ParseInput().Part2().ShouldBe(315);
 }
