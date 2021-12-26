@@ -2,7 +2,7 @@
 using System.Text.RegularExpressions;
 using Xunit;
 
-"input.txt".ParseInput().Part1().Print();
+"input.txt".ParseInput().Part2().Print();
 
 public static class Solve
 {
@@ -20,6 +20,16 @@ public static class Solve
         }
         
         return max;
+    }
+
+    public static long Part2(this Area target)
+    {
+        return (
+            from x in Enumerable.Range(1, 1000)
+            from y in Enumerable.Range(-500, 1000)
+            let outcome = new Trajectory(x, y).Hits(target)
+            where outcome.hits
+            select outcome).Count();
     }
 
     // https://en.wikipedia.org/wiki/Hill_climbing
@@ -137,4 +147,7 @@ public class Tests
 {
     [Fact]
     public void ValidatePart1Example() => "example.txt".ParseInput().Part1().ShouldBe(45);
+
+    [Fact]
+    public void ValidatePart2Example() => "example.txt".ParseInput().Part2().ShouldBe(112);
 }
