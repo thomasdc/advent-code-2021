@@ -1,12 +1,20 @@
 ﻿using Shouldly;
 using Xunit;
 
-"input.txt".ParseInput().Part1().Print();
+"input.txt".Part2().Print();
 
 public static class Solve
 {
     public static long Part1(this IEnumerable<Snailfish> homework) => 
         homework.Skip(1).Aggregate(homework.ElementAt(0), (acc, cur) => acc.Add(cur)).Root.Magnitude;
+
+    public static long Part2(this string fileName) =>
+            (from left in File.ReadAllLines(fileName)
+             from right in File.ReadAllLines(fileName)
+             where !left.Equals(right)
+             let l = Utils.ParseLine(left)
+             let r = Utils.ParseLine(right)
+             select Part1(new[] { l, r })).Max();
 }
 
 public class Snailfish
@@ -289,4 +297,8 @@ public class Tests
     [InlineData("example1.txt", 3488)]
     [InlineData("example2.txt", 4140)]
     public void ValidatePart1Examples(string fileName, int expectedMagnitude) => fileName.ParseInput().Part1().ShouldBe(expectedMagnitude);
+    
+    [Theory]
+    [InlineData("example2.txt", 3993)]
+    public void ValidatePart2Examples(string fileName, int expectedMagnitude) => fileName.Part2().ShouldBe(expectedMagnitude);
 }
