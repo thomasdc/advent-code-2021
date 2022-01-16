@@ -2,14 +2,16 @@
 using System.Text.RegularExpressions;
 using Xunit;
 
-"example.txt".ParseInput().ToList().Part1().Print();
+"input.txt".ParseInput().ToList().Part2().Print();
 
 public static class Solver
 {
-    public static int Part1(this List<Scanner> scanners)
+    public static (int beaconCount, Coordinate[] bases) Part1(this List<Scanner> scanners)
     {
+        var bases = new List<Coordinate>();
         var root = scanners[0];
         scanners.Remove(root);
+        bases.Add(new(0, 0, 0));
 
         while (scanners.Any())
         {
@@ -26,6 +28,7 @@ public static class Solver
                     where delta == matchingPairs[1].left.Coordinate - matchingPairs[1].right.Coordinate.Transform(trans.TransformationIndex)
                     select (trans.TransformationIndex, delta)).Single();
                 Console.WriteLine($"merging S{to} (transformation index={transformation.TransformationIndex}, delta={transformation.delta})");
+                bases.Add(transformation.delta);
                 var rebased = (
                     from b in to.BeaconReports
                     select transformation.delta + b.Coordinate.Transform(transformation.TransformationIndex)).ToArray();
@@ -34,7 +37,17 @@ public static class Solver
             }
         }
 
-        return root.BeaconReports.Count;
+        return (root.BeaconReports.Count, bases.ToArray());
+    }
+
+    public static int Part2(this List<Scanner> scanners)
+    {
+        var (_, bases) = Part1(scanners);
+        return (
+                from left in bases
+                from right in bases.Except(new[] {left})
+                select Math.Abs(right.X - left.X) + Math.Abs(right.Y - left.Y) + Math.Abs(right.Z - left.Z))
+            .Max();
     }
 }
 
@@ -101,7 +114,7 @@ public class BeaconReport
             distances[0] = Math.Abs(other.Coordinate.X - Coordinate.X);
             distances[1] = Math.Abs(other.Coordinate.Y - Coordinate.Y);
             distances[2] = Math.Abs(other.Coordinate.Z - Coordinate.Z);
-            _manhattanDistances.Add(other, distances);
+            _manhattanDistances.Add(other, distances.OrderBy(_ => _).ToArray());
         }
     }
 
@@ -110,7 +123,7 @@ public class BeaconReport
         var matches =  (
             from left in _manhattanDistances
             from right in other._manhattanDistances
-            where left.Value.OrderBy(_ => _).SequenceEqual(right.Value.OrderBy(_ => _))
+            where left.Value.SequenceEqual(right.Value)
             select (left, right)).ToArray();
 
         if (matches.Length >= 11)
@@ -118,7 +131,7 @@ public class BeaconReport
             Console.WriteLine($"found a match between {this}\t\t and {other}\t\t(overlap: {matches.Length})");
         }
         
-        return matches.Count() >= 11;
+        return matches.Length >= 11;
     }
 }
 
@@ -197,5 +210,8 @@ public static class Utils
 public class Tests
 {
     [Fact]
-    public void ValidatePart1Example() => "example.txt".ParseInput().ToList().Part1().ShouldBe(79);
+    public void ValidatePart1Example() => "example.txt".ParseInput().ToList().Part1().beaconCount.ShouldBe(79);
+
+    [Fact]
+    public void ValidatePart2Example() => "example.txt".ParseInput().ToList().Part2().ShouldBe(3621);
 }
