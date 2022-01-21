@@ -2,7 +2,7 @@
 using System.Collections;
 using Xunit;
 
-"input.txt".ParseInput().Part1().Print();
+"input.txt".ParseInput().Part2().Print();
 
 public static class Solver
 {
@@ -11,7 +11,7 @@ public static class Solver
         from x in new[] {-1, 0, 1}
         select (x, y)).ToArray();
 
-    public static int Part1(this (BitArray algorithm, HashSet<(int x, int y)> image) input)
+    public static int Part1(this (BitArray algorithm, HashSet<(int x, int y)> image) input, int numberOfIterations = 2)
     {
         var image = input.image;
         var minX = image.MinBy(_ => _.x).x;
@@ -20,7 +20,7 @@ public static class Solver
         var maxY = image.MaxBy(_ => _.y).y;
         var alternates = input.algorithm[0];
         var fallback = false;
-        for (var i = 0; i < 2; i++)
+        for (var i = 0; i < numberOfIterations; i++)
         {
             var newImage = new HashSet<(int x, int y)>();
             var newMinX = int.MaxValue;
@@ -70,6 +70,8 @@ public static class Solver
         return image.Count;
     }
 
+    public static int Part2(this (BitArray algorithm, HashSet<(int x, int y)> image) input) => input.Part1(50);
+
     private static (int x, int y)[] Neighbours(this (int x, int y) point) => NeighbourVectors.Select(_ => (x: point.x + _.x, y: point.y + _.y)).ToArray();
     private static int ToDecimal(this bool[] bits) => bits.Aggregate(0, (result, bit) => (result << 1) + (bit ? 1 : 0));
 }
@@ -109,4 +111,7 @@ public class Tests
 {
     [Fact]
     public void ValidatePart1Example() => "example.txt".ParseInput().Part1().ShouldBe(35);
+    
+    [Fact]
+    public void ValidatePart2Example() => "example.txt".ParseInput().Part2().ShouldBe(3351);
 }
